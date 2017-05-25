@@ -32,7 +32,10 @@ def _kotlin_compile_impl(ctx):
 
     # Populate from (transitive) kotlin dependencies
     for dep in ctx.attr.deps:
-        jars += [file for file in dep.kt.transitive_jars]
+        if hasattr(dep, "kt"):
+            jars += [file for file in dep.kt.transitive_jars]
+        if hasattr(dep, "android") and dep.android.defines_resources:
+            jars += [dep.android.resource_jar.class_jar]
 
     # Populate from jar dependencies
     for fileset in ctx.attr.jars:
@@ -98,10 +101,8 @@ _kotlin_compile_attrs = {
         allow_files = kt_filetype,
     ),
 
-    # Dependent kotlin rules.
-    "deps": attr.label_list(
-        providers = ["kt"],
-    ),
+    # Dependent kotlin or android rules.
+    "deps": attr.label_list(),
 
     # Dependent java rules.
     "java_deps": attr.label_list(
